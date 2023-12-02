@@ -32,6 +32,8 @@
 #include <iostream>
 #include <string>
 
-boost::asio::awaitable<void> tryToEnrollIntoCourse (boost::asio::io_context &ioContext, std::string const &email, std::string const &password, std::string const &courseToEnroll);
+boost::asio::awaitable<boost::json::value> teacherRequest (boost::asio::io_context &ioContext, uint64_t page);
+
+boost::asio::awaitable<void> getCheapestTeacher (boost::asio::io_context &ioContext);
 
 #endif /* BE98F3C9_250B_4579_8C5A_61582E694F6C */

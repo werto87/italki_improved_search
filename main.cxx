@@ -1,4 +1,5 @@
 #include "src/logic.hxx"
+#include "src/util.hxx"
 #include <Corrade/Utility/Arguments.h>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -31,30 +32,15 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include "src/util.hxx"
-
-// TODO make a systemd service for this and run it
 
 int
 main (int argc, char **argv)
 {
-  Corrade::Utility::Arguments args;
-  // clang-format off
-  args
-    .addNamedArgument("email").setHelp("email", "email address")
-    .addNamedArgument("password").setHelp("password", "password")
-    .addNamedArgument("courseToEnroll").setHelp("courseToEnroll", "course to enroll use \"your course for spaces\"")
-    .addOption("minutesToWait","60").setHelp("minutesToWait", "minutes to wait until retry to enroll")
-    .parse(argc, argv);
-  // clang-format on
-  auto email = args.value ("email");
-  auto password = args.value ("password");
-  auto courseToEnroll = args.value ("courseToEnroll");
-  auto minutesToWait = std::stoul (args.value ("minutesToWait"));
+  auto minutesToWait = std::chrono::minutes{ 10 };
   boost::asio::io_context ioc;
   for (;;)
     {
-      boost::asio::co_spawn (ioc, tryToEnrollIntoCourse (ioc, email, password, courseToEnroll), printException);
+      boost::asio::co_spawn (ioc, getCheapestTeacher (ioc), printException);
       boost::asio::system_timer timer{ ioc };
       timer.expires_after (std::chrono::minutes{ minutesToWait });
       boost::asio::co_spawn (ioc, timer.async_wait (boost::asio::use_awaitable), printException);
