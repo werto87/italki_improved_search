@@ -16,7 +16,7 @@ getCheapestTeacher (boost::asio::io_context &ioContext)
 {
   boost::json::value result = co_await teacherRequest (ioContext, 1);
   auto teachers = std::vector<boost::json::value>{};
-  for (long i = 1; i <= result.at_pointer ("/statistics/count").as_int64 () / 20; ++i)
+  for (uint64_t i = 1; i <= result.at_pointer ("/statistics/count").as_uint64 () / 20; ++i)
     {
       //      TODO extract just the teachers and put them in one array
       teachers.push_back (co_await teacherRequest (ioContext, i));
