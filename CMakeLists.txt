@@ -6,6 +6,9 @@ project(project VERSION 1.0.0
 cmake_policy(SET CMP0015 NEW)
 include(cmake/Cache.cmake)
 find_package(Boost REQUIRED)
+find_package(confu_json REQUIRED)
+find_package(certify REQUIRED)
+find_package(Corrade REQUIRED)
 set(PROJECT_WARNINGS project_warning)
 add_library(${PROJECT_WARNINGS} INTERFACE)
 include(cmake/CompilerWarnings.cmake)
@@ -29,7 +32,9 @@ target_link_libraries(${TARGET_NAME_LIB} PUBLIC
 ${PROJECT_WARNINGS}
 ${PROJECT_OPTIONS}
         Boost::boost
-
+        confu_json::confu_json
+        certify::_certify
+        Corrade::Corrade
 )
 target_compile_definitions(${TARGET_NAME_LIB} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>")
 target_compile_definitions(${TARGET_NAME_LIB} PUBLIC _LIBCPP_ENABLE_CXX20_REMOVED_TYPE_TRAITS)
