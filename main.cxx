@@ -31,6 +31,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include "src/util.hxx"
 
 // TODO make a systemd service for this and run it
 
@@ -53,13 +54,13 @@ main (int argc, char **argv)
   boost::asio::io_context ioc;
   for (;;)
     {
-//      boost::asio::co_spawn (ioc, tryToEnrollIntoCourse (ioc, email, password, courseToEnroll), printException);
-//      boost::asio::system_timer timer{ ioc };
-//      timer.expires_after (std::chrono::minutes{ minutesToWait });
-//      boost::asio::co_spawn (ioc, timer.async_wait (boost::asio::use_awaitable), printException);
-//      ioc.run ();
-//      ioc.stop ();
-//      ioc.reset ();
+      boost::asio::co_spawn (ioc, tryToEnrollIntoCourse (ioc, email, password, courseToEnroll), printException);
+      boost::asio::system_timer timer{ ioc };
+      timer.expires_after (std::chrono::minutes{ minutesToWait });
+      boost::asio::co_spawn (ioc, timer.async_wait (boost::asio::use_awaitable), printException);
+      ioc.run ();
+      ioc.stop ();
+      ioc.reset ();
     }
   return 0;
 }
