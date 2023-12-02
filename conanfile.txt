@@ -1,0 +1,10 @@
+[requires]
+catch2/2.13.7
+boost/1.83.0
+[generators]
+CMakeDeps
+CMakeToolchain
+[options]
+catch2/*:with_main=True
+catch2/*:with_benchmark=True
+boost/*:header_only=True
