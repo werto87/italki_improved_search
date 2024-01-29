@@ -34,6 +34,12 @@
 
 boost::asio::awaitable<boost::json::value> teacherRequest (boost::asio::io_context &ioContext, uint64_t page);
 
-boost::asio::awaitable<void> getCheapestTeacher (boost::asio::io_context &ioContext);
+struct Teacher
+{
+  int64_t id{};
+  double pricePerMinuteInDollarCent{};
+};
+
+boost::asio::awaitable<std::vector<Teacher> > getTeacherWithPrice (boost::asio::io_context &ioContext, std::function<bool (boost::json::value const &data)> const &filter);
 
 #endif /* BE98F3C9_250B_4579_8C5A_61582E694F6C */

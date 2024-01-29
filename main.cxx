@@ -40,7 +40,22 @@ main (int argc, char **argv)
   boost::asio::io_context ioc;
   for (;;)
     {
-      boost::asio::co_spawn (ioc, getCheapestTeacher (ioc), printException);
+      boost::asio::co_spawn (
+          ioc,
+          [&ioc] () mutable -> boost::asio::awaitable<void> {
+            auto result = co_await getTeacherWithPrice (ioc, [] (auto const &data) {
+              //
+              //              return std::ranges::any_of (data.at_pointer ("/teacher_info/also_speak").as_array (), [] (auto const &language) { return language.at_pointer ("/language") == "english" and language.at_pointer ("/level").as_int64 () >= 4; });
+              // TODO write filter algorithm
+              return true;
+            });
+            std::ranges::sort (result, std::less<> (), &Teacher::pricePerMinuteInDollarCent);
+            for (auto const &teacher : result)
+              {
+                std::cout << "id: '" << teacher.id << "' : price in cent per minute: '" << teacher.pricePerMinuteInDollarCent << std::endl;
+              }
+          },
+          printException);
       boost::asio::system_timer timer{ ioc };
       timer.expires_after (std::chrono::minutes{ minutesToWait });
       boost::asio::co_spawn (ioc, timer.async_wait (boost::asio::use_awaitable), printException);

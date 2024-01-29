@@ -3,25 +3,68 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <map>
 namespace beast = boost::beast; // from <boost/beast.hpp>
 namespace http = beast::http;   // from <boost/beast/http.hpp>
 namespace net = boost::asio;    // from <boost/asio.hpp>
 namespace ssl = net::ssl;       // from <boost/asio/ssl.hpp>
 using tcp = net::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-boost::asio::awaitable<void>
-getCheapestTeacher (boost::asio::io_context &ioContext)
+// clang-format off
+auto const sessionLengthTimeInMinutesMapping = std::map<int64_t, std::chrono::minutes>{
+                                                                                        { 1, std::chrono::minutes{ 15 } },
+                                                                                        { 2, std::chrono::minutes{ 30 } },
+                                                                                        { 3, std::chrono::minutes{ 45 } },
+                                                                                        { 4, std::chrono::minutes{ 60 } },
+                                                                                        { 5, std::chrono::minutes{ 75 } },
+                                                                                        { 6, std::chrono::minutes{ 90 } }
+                                                                                      };
+// clang-format on
+boost::asio::awaitable<std::vector<Teacher> >
+getTeacherWithPrice (boost::asio::io_context &ioContext, std::function<bool (boost::json::value const &data)> const &filter)
 {
+  auto teachers = std::vector<Teacher>{};
   boost::json::value result = co_await teacherRequest (ioContext, 1);
-  auto teachers = std::vector<boost::json::value>{};
-  for (uint64_t i = 1; i <= result.at_pointer ("/statistics/count").as_uint64 () / 20; ++i)
+  try
     {
-      //      TODO extract just the teachers and put them in one array
-      teachers.push_back (co_await teacherRequest (ioContext, i));
+      auto count = boost::numeric_cast<uint64_t> (result.at_pointer ("/statistics/count").as_int64 ()) / 20;
+      for (uint64_t i = 1; i <= count; ++i)
+        {
+          boost::json::value const &teachersForPage = co_await teacherRequest (ioContext, i);
+          for (auto const &data : teachersForPage.at_pointer ("/data").as_array ())
+            {
+              if (std::ranges::find_if (teachers, [id = data.at_pointer ("/user_info/user_id").as_int64 ()] (Teacher const &teacher) { return teacher.id == id; }) == teachers.end ())
+                {
+                  if (filter)
+                    {
+                      auto pricePerMinute = std::vector<double>{};
+                      for (auto const &course : data.at_pointer ("/pro_course_detail").as_array ())
+                        {
+                          for (auto const &priceList : course.at_pointer ("/price_list").as_array ())
+                            {
+                              auto price = boost::numeric_cast<double> (priceList.at_pointer ("/session_price").as_int64 ());
+                              auto timeInMinutes = sessionLengthTimeInMinutesMapping.at (priceList.at_pointer ("/session_length").as_int64 ());
+                              pricePerMinute.emplace_back (price / boost::numeric_cast<double> (timeInMinutes.count ()));
+                            }
+                        }
+                      teachers.emplace_back (Teacher{ .id = data.at_pointer ("/user_info/user_id").as_int64 (), .pricePerMinuteInDollarCent = *std::ranges::min_element (pricePerMinute) });
+                    }
+                }
+            }
+        }
     }
-  auto test = 42;
+  catch (std::exception const &ex)
+    {
+      std::cout << "std::exception const &ex : " << ex.what () << std::endl;
+    }
+  catch (...)
+    {
+      std::cout << "..." << std::endl;
+    }
+  co_return teachers;
 }
 
 boost::asio::awaitable<boost::json::value>
